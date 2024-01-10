@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -15,17 +16,67 @@ namespace CompilerApiBook
                         using System; 
                         public class ContainsMethods 
                         { 
-                         public void Method1() { } 
-                         public void Method2(int a, Guid b) { } 
-                         public void Method3(string a) { } 
-                         public void Method4(ref string a) { } 
+                         private void Method1() { } 
+                         internal void Method2(int a, Guid b) { } 
+                         protected void Method3(string a) { } 
+                         public void Method4(ref string a) { }
+                         protected internal void Method5(long a) { } 
                         }";
 
             var tree = SyntaxFactory.ParseSyntaxTree(code);
 
-            PrintMethodContentViaTree(tree);
+            ModifyTreeViaTree(tree);
         }
 
+        private static void ModifyTreeViaTree(SyntaxTree tree)
+        {
+            Console.Out.WriteLine(nameof(Program.ModifyTreeViaTree));
+            Console.Out.WriteLine(tree);
+
+            var methods = tree
+                .GetRoot()
+                .DescendantNodes(_ => true)
+                .OfType<MethodDeclarationSyntax>();
+
+            var newTree = tree
+                .GetRoot()
+                .ReplaceNodes(
+                    methods,
+                    (method, methodWithReplacements) =>
+                    {
+                        var visibilityTokens = method.DescendantTokens(_ => true)
+                            .Where(x => x.IsKind(SyntaxKind.PublicKeyword)
+                                        || x.IsKind(SyntaxKind.PrivateKeyword)
+                                        || x.IsKind(SyntaxKind.ProtectedKeyword)
+                                        || x.IsKind(SyntaxKind.InternalKeyword)).ToImmutableList();
+
+                        if (!visibilityTokens.Any(x => x.IsKind(SyntaxKind.PublicKeyword)))
+                        {
+                            var tokenPosition = 0;
+
+                            var newMethod = method.ReplaceTokens(
+                                visibilityTokens,
+                                (x, _) =>
+                                {
+                                    ++tokenPosition;
+
+                                    return tokenPosition == 1
+                                        ? SyntaxFactory.Token(
+                                            x.LeadingTrivia,
+                                            SyntaxKind.PublicKeyword,
+                                            x.TrailingTrivia)
+                                        : new SyntaxToken();
+                                });
+
+                            return newMethod;
+                        }
+                        
+                        return method;
+                    });
+            
+            Console.Out.WriteLine(newTree);
+        }
+        
         private static void PrintMethodContentViaTree(SyntaxTree tree)
         {
             var methods = tree.GetRoot()
