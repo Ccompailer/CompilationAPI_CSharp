@@ -24,8 +24,8 @@ namespace CompilerApiBook
                         }";
 
             var tree = SyntaxFactory.ParseSyntaxTree(code);
-
-            ModifyTreeViaTree(tree);
+            
+            var newTree = new MethodRewriter().Visit(tree.GetRoot());
         }
 
         private static void ModifyTreeViaTree(SyntaxTree tree)
