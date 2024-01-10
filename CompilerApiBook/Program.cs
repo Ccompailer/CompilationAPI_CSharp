@@ -70,13 +70,13 @@ namespace CompilerApiBook
 
                             return newMethod;
                         }
-                        
+
                         return method;
                     });
-            
+
             Console.Out.WriteLine(newTree);
         }
-        
+
         private static void PrintMethodContentViaTree(SyntaxTree tree)
         {
             var methods = tree.GetRoot()
@@ -126,7 +126,7 @@ namespace CompilerApiBook
                     var isRef = parameter.RefKind == RefKind.Ref ? "ref" : string.Empty;
                     parameters.Add($"{isRef} {parameter.Type.Name} {parameter.Name}");
                 }
-                
+
                 Console.Out.WriteLine(
                     $"{methodInfo.Name}({string.Join(", ", parameters)})");
             }
@@ -153,6 +153,43 @@ namespace CompilerApiBook
             Console.Out.WriteLine($"{node.Identifier.Text}({string.Join(", ", parameters)})");
 
             base.VisitMethodDeclaration(node);
+        }
+    }
+
+    public sealed class MethodVisitor
+        : CSharpSyntaxRewriter
+    {
+        public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node)
+        {
+            var visibilityTokens = node
+                .DescendantTokens(_ => true)
+                .Where(x => x.IsKind(SyntaxKind.PublicKeyword)
+                            || x.IsKind(SyntaxKind.PrivateKeyword)
+                            || x.IsKind(SyntaxKind.ProtectedKeyword)
+                            || x.IsKind(SyntaxKind.InternalKeyword)).ToImmutableList();
+
+            if (!visibilityTokens.Any(x => x.IsKind(SyntaxKind.PublicKeyword)))
+            {
+                var tokenPosition = 0;
+
+                var newMethod = node.ReplaceTokens(
+                    visibilityTokens,
+                    (x, _) =>
+                    {
+                        ++tokenPosition;
+
+                        return tokenPosition == 1
+                            ? SyntaxFactory.Token(
+                                x.LeadingTrivia,
+                                SyntaxKind.PublicKeyword,
+                                x.TrailingTrivia)
+                            : new SyntaxToken();
+                    });
+                
+                return newMethod;
+            }
+            
+            return node;
         }
     }
 }
