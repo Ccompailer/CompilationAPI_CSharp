@@ -156,7 +156,7 @@ namespace CompilerApiBook
         }
     }
 
-    public sealed class MethodVisitor
+    public sealed class MethodRewriter
         : CSharpSyntaxRewriter
     {
         public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node)
