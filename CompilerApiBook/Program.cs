@@ -56,6 +56,29 @@ namespace CompilerApiBook
                 {
                     MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
                 });
+
+            var model = compilation.GetSemanticModel(tree, true);
+
+            var methods = tree
+                .GetRoot()
+                .DescendantNodes(_ => true)
+                .OfType<MethodDeclarationSyntax>();
+
+            foreach (var method in methods)
+            {
+                var methodInfo = model.GetDeclaredSymbol(method);
+
+                var parameters = new List<string>();
+
+                foreach (var parameter in methodInfo.Parameters)
+                {
+                    var isRef = parameter.RefKind == RefKind.Ref ? "ref" : string.Empty;
+                    parameters.Add($"{isRef} {parameter.Type.Name} {parameter.Name}");
+                }
+                
+                Console.Out.WriteLine(
+                    $"{methodInfo.Name}({string.Join(", ", parameters)})");
+            }
         }
     }
 
