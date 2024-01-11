@@ -150,7 +150,7 @@ namespace CompilerApiBook
                 parameters.Add($"{parameter.Type.ToFullString().Trim()} {parameter.Identifier.Text}");
             }
 
-            Console.Out.WriteLine($"{node.Identifier.Text}({string.Join(", ", parameters)})");
+            Console.WriteLine($"{node.Identifier.Text}({string.Join(", ", parameters)})");
 
             base.VisitMethodDeclaration(node);
         }
