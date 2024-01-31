@@ -8,6 +8,23 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace CompilerApiBook
 {
+    
+    public class Post
+    {
+        public Post(int id, string title, DateTime postedOn)
+        {
+            Id = id;
+            Title = title;
+            PostedOn = postedOn;
+        }
+
+        public int Id { get; set; }
+
+        public string Title { get; set; }
+        public string Content { get; set; }
+        public DateTime PostedOn { get; set; }
+    }
+    
     internal class Program
     {
         public static void Main(string[] args)
